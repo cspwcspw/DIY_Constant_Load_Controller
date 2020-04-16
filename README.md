@@ -14,7 +14,7 @@ to stress-test power supplies, solar panels, batteries, etc.
 on the lookout for a decent heat sink, so I snapped an old driver board when 
 I found one scheduled for recycling.   
 
-![Heatsink](Images/Heatsink.jpg "Heatsink")
+![heatsink](Images/heatsink.jpg "heatsink")
 
 The heatsink indirectly determined the final look of the build.
 Instead of finding a project box I re-used the PCB that was originally 
