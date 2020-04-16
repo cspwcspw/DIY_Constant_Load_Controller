@@ -1,4 +1,4 @@
-# Arduino Constant Load DIY Project
+# Arduino Constant-Load Retro-Look DIY Project
 
 *_An Arduino UNO provides control for fixed current or fixed power loads._*
 
@@ -6,15 +6,41 @@ _Pete Wentworth_    mailto:cspwcspw@gmail.com
 
 ## Overview
 
-There are plenty of constant power / constant load DIY projects.  It 
-is almost a "rite of passage" if we're going
+There are plenty of DIY constant power / constant load projects. 
+Building one is almost a "rite of passage" if we're going
 to stress-test power supplies, solar panels, batteries, etc. 
-[Here is the one that inspired mine, from GreatScott!](https://www.youtube.com/watch?v=VwCHtwskzLA)  
 
-While this project unfolded I was part of an extended stay-at-home lockdown 
+[This one from GreatScott!](https://www.youtube.com/watch?v=VwCHtwskzLA) put me
+on the lookout for a decent heat sink, so I snapped an old driver board when 
+I found one scheduled for recycling.   
+
+![Heatsink](Images/Heatsink.jpg "Heatsink")
+
+The heatsink indirectly determined the final look of the build.
+Instead of finding a project box I re-used the PCB that was originally 
+under the heatsink.  I mounted it on standoff stilts to make a front 
+panel for the project. After cutting a hole in the PCB for the LCD screen 
+and mounting some banana-plug connectors, I asked "Why not mount the Arduino 
+on top, instead of inside?"   Then I found an old-fashioned knob for the
+rotary encoder, etc. etc.  So the final product looks like this:
+
+![theBuild](Images/theBuild.jpg "theBuild")
+
+Having the Arduino on the outside rather than the inside has been useful: 
+I can download other sketches and I already have hardware like
+the LCD, rotary encoder, temperature and current sensors, etc. all hooked up.
+And all the headers are still available for breadboard use. 
+
+Here's a close-up of the LCD with the controller drawing a load from my 
+bench power supply.  The temperature measured at the MOSFET is in Celcius.  
+
+![LCD](Images/LCD.jpg "LCD")
+
+While this project unfolded I was part of a stay-at-home lockdown 
 from the COVID-19 pandemic. 
-That ought to be irrelevant, but I was unable to get online orders
-delivered, so it had to be "make some plan with whatever you happen to have available". 
+That ought to be irrelevant, but I was unable to get online
+deliveries, so it had to be "make some plan with whatever 
+you happen to have available". 
 And it became a playground for scope creep and extra features that make the final
 product a somewhat over-engineered hodge-podge of complexity. 
 
@@ -45,16 +71,17 @@ However, in this project we're using the MOSFET to directly load the
 source.  So if I want to test a 12V battery at 2 Amps I need to turn the 
 MOSFET only partially on, and leave it conducting continuously,
 so that its RDS is about 6 ohms. That 
-creates 24 Watts of heat - a small soldering iron's worth - needing  
+creates 24 watts of heat - a small soldering iron's worth - which needs  
 to be dissipated.  
 
 Unfortunately, the IFR3205 is not a "logic level MOSFET".  (Neither was the
 IRFZ44N that GreatScott used.)  This means that the controlling gate 
-requires control voltages outside "logic levels" - i.e. to start any
+requires control voltages outside "logic levels" provided by the Arduino.
+For example, to start any
 current flow in the MOSFET (the so-called Gate Threshold Voltage) I need
 between 2V to 4V on the IFR3205 data sheet, and to fully turn on
-the device needs about 10V on the gate.  (I'm never going close to 
-fully turning on the MOSFET, so I get away with about 7V maximum.)
+the device needs about 8V on the gate.  (I'm never going close to 
+fully turning on the MOSFET, so I get away with a bit less than 8V.)
 
 So how are we going to get the Arduino to generate and control 
 a variable analog voltage in the range of about 2V-8V to drive the 
@@ -76,8 +103,7 @@ to create the voltage for the MOSFET gate.
 
 Normal PWM on the Arduino has only 8 bits of resolution, and a fairly
 slow PWM carrier frequency.  The faster the PWM frequency, the easier 
-it is to clean up the output. And one can potentially get more PWM bits of
-resolution.  So here's what we did in the software:
+it is to clean up the output. And I'd like finer PWM resolution.  
 
 https://arduino.stackexchange.com/questions/12718/increase-pwm-bit-resolution/12719 
 shows us how to use the 16-bit timer 1 on the Arduino to create higher 
@@ -86,16 +112,16 @@ resolution, the counter has to count twice as far, so the frequency of the PWM
 halves.  I chose 10-bit PWM output which gives a PWM carrier frequency of 
 about 15.6Khz.   
 
-So here is the intial LTSpice suimulation and the "front end" of my
-build.  I used a switch in LTSpice to "float" the GPIO - this happens
-in practice when the Arduino is reset.
+So here is the intial LTSpice simulation and the "front end" of my
+build.  I used a switch in LTSpice to "float" the GPIO - this simulates
+what happens when the Arduino is reset.
 
 ![CircuitPart1](Images/CircuitPart1.png "Circuit Part1")
 
 Smoothing was still a bit problematic. With bigger resistors and capacitors 
 in the RC circuit I got less ripple, but slower response to changes in the
 PWM value.  And I still had to solve the problem of level shifing and 
-remapping the 0V-5V into 2V-8V (nominal).   
+remapping the 0V-5V into 2V-8V.   
 
 To shift and stretch the voltage range I used an OpAmp.  And I wanted a 
 two-pole smoothing filter.  What seems to work really nicely is that I put a smaller 
@@ -110,63 +136,62 @@ I had a couple of choices in my available parts: I chose the
 ubiquitous LM358P.  
 
 In an ideal world, every opAmp has a straight line response:  you
-put in `X` and get out `Y = mX + C`.  The slope of the line, `m` can be
-positive or negative, and represents the gain.  `C` represents the 
+put in `X` and get out `Y = mX + b`.  The slope of the line, `m`, can be
+positive or negative, and represents the gain.  `b` represents the 
 offset.  `X` here is going to be the 0V-5V analogue value from the 
 smoothed PWM from the Arduino. Y (still with some ripple) will
-be smoothed and fed into the MOSFET gate, where I want, say, 2V-7V.
+be smoothed and fed into the MOSFET gate, where I want, say, 2V-8V.
 
 OpAmps usually need both positive and negative voltage rail supplies.
-But having to provide a negative voltage for the opAmp is a 
+But having to provide extra voltage rails for the opAmp is a 
 pain.  So there are some designs for "single-ended" circuits that
 operate the device with its lower supply rail at ground.  This is much
 trickier territory.   
 
 Ron Mancini from Texas Instruments provided my go-to resource for
-single-ended opAmp design at http://www.ti.com/lit/an/sloa030a/sloa030a.pdf  
+single-ended opAmp design at http://www.ti.com/lit/an/sloa030a/sloa030a.pdf 
 After some wading through the theory he comes up with four possible cases, 
 and then provides a suggested template circuit
 for each.  The case I needed was a non-inverting amplifier where
-my offset C would be about 2V: just below the MOSFET gate threshold.  
+my offset `b` would be about 1.8V: just below the MOSFET gate threshold. 
 This is Mancini's cookbook design that I adapted:  
 
 ![mancini](Images/Mancini.png "Mancini's Circuit")
 
-The gain, or `m` in the equation, is determined by 
-resistors (`1 + Rf / Rg`), so that could be a trimpot or 
+The gain, or `m` in the equation, is (`1 + Rf / Rg`), so 
+that could be a trimpot or 
 a sensitivity potentiometer in my final circuit.  
  
- The other big gotcha about OpAmps, though, is how close the output
- can get to the power rails.  Newer OpAmps specifically designed for
- single-ended supplies are often "rail-to-rail" meaning that the 
- input or output voltages can very closely approach the rail voltages. 
- (Some opAmps can only get close to the rails on outputs, some on inputs,
- some, usually abbreviated RRIO, can get close to the rails on both
- inputs or outputs.)  
+The other big "gotcha" about OpAmps, though, is how close the output
+can get to the power rails.  Newer OpAmps specifically designed for
+single-ended supplies are often "rail-to-rail" meaning that the 
+input or output voltages can very closely approach the supply rail voltages. 
+(Some opAmps can only get close to the rails on outputs, some only on inputs.
+Some, usually marketed as RRIO, can get close to the rails on both
+inputs or outputs.)  
  
- My LM358p input voltage can get pretty close to the zero rail, 
-and but it exhibited linear amplifcation only while the 
-output voltage stayed between 0.7V and about 1V below Vcc.  
+My LM358p remains responsive when its input voltage is pretty close to the 
+zero rail, but the response curve was only linear for outputs 
+between 0.7V and about Vcc-1V.  
 
 So here is the LTSpice "back end" of my circuit. To make it easier for
-others to run my simulation, I substituted built-in, but a "similar" enough
-opAmp and MOSFET into the simulation.
+others to run my simulation, I substituted built-in, but a "similar enough"
+opAmp (AD549) and MOSFET (IFRZ44N) components into the simulation.
 
 ![CircuitPart2](Images/CircuitPart2.png "Circuit Part2")
 
-
-The output of this amplifier will feed the Mosfet gate. 
+The output of this amplifier stage will feed the MOSFET gate. 
 The 0.7V will is low enough to turn off the MOSFET completely. 
 So all I need now is a rail voltage of at least 9V to get 
-the OpAmp output up to 8V.
+my OpAmp output up to 8V.
 
-But I really didn't want to have to bring in other power ...
+But I really didn't want to have to bring in another power rail ...
 
  ## A Voltage Multiplier to the Rescue 
 
 A Dixon voltage multiplier comprises two diodes and two capacitors. One diode 
 provide a base supply voltage (5V in this case) and the Arduino PWM output, 
-through a capacitor, periodically "pumps" additional voltage into the output.  
+through a capacitor, periodically "pumps" additional voltage into the output. 
 Some smoothing is added to this.  See
 https://en.wikipedia.org/wiki/Voltage_doubler 
 or watch https://www.youtube.com/watch?v=I4ED_8cuVTU.
@@ -176,11 +201,11 @@ requirements: a very good fit in my project.
 All I need is to provide a high-voltage rail for the opAmp, 
 which in turn sources the current to drive the MOSFET gate. 
 The MOSFET is a voltage-controlled device - its current requirements 
-on the Gate are negligible unless the design needs to overcome 
-the high gate capacitance in a hurry for high-frequency switching.  
+on the Gate are extremely low unless the design needs to overcome 
+the high gate capacitance in a hurry for high-frequency switching. 
 High-frequency MOSFET switching is absolutely not a requirement here. 
-Once again, I used different Schottky diodes in my build, but the ones
-shown here are similar, and already in the LTSpice component library. 
+Again I used different Schottky diodes in my build, but the ones
+shown here are similar enough, and in the LTSpice component library. 
 
 ![CircuitPart2](Images/CircuitPart3.png "Circuit Part2")
 
@@ -211,22 +236,24 @@ I were to start again I would probably target lower total power draw in the hope
 of getting better current meaurements in a smaller range. 
 
 
-## Temerature Measurement
+## Temperature Measurement
 
-It would be nice to know how hot the MOSFET gets.  I had some
+It would be nice to monitor the temperature of the MOSFET.  I had some
 cheap little temperature sensors, I mounted one on top of the MOSFET
 and added some software control for thermal overload cutoff, 
 and for switching a fan on or off.
 
+![sensors1](Images/sensors1.png "sensors1")
+
 Reading the sensors in the background (I was unwilling to suspend my
-measure-and-control cycle for the time needed to read the sensors with
+measure-and-control cycle for the duration needed to read the sensors with
 the standard libraries) became a major diversion from the main project. 
 So much so that I wrote it up separately, available 
 at https://github.com/cspwcspw/Background_DS1820_Sensing 
 
 The take-away here is that plastic-encased "environmental" sensors have slow
 thermal response and are not really suitable for protection 
-in the same sense as a fast-blow fuse might provide protection. But mine cost 
+in the same way that a fast-blow fuse might provide protection. But these cost 
 less than half a dollar, and provided plenty of DIY challenges and fun watching
 the fan turn on and off at the programmed thresholds.
 
@@ -238,38 +265,69 @@ susceptible to thermal runaway.  As the MOSFET
 gets hotter, it allows more current to flow, and thus has to dissipate more
 heat, making it even hotter ...    
 
-Here is a snipped from the IRF3205 data sheet.  At a fixed 4.5V gate voltage
-controlling a 10 Volt load, we'll draw around 8 amps at room temperature, 
-but the draw is around 26 amps if the junction gets really hot.  (These are
-only 20us pulses).
+This is consistent with the IRF3205 data sheet. 
+At a fixed 4.5V gate voltage
+controlling a 10 Volt load, the current is around 8 amps at room temperature, 
+but for that same gate and load voltages, the current climbs to 26 amps if the 
+junction gets really hot.  (These are short 20us pulses).
 
 ![currentSensor](Images/ThermalEffect.png "Current Sensor")
 
-## Parasitic Cooling
+## Parasitic Cooling and Shunt Loads
 
-I had a 12V computer fan reclaimed from a teardown.  I used the source current, a
-7812 regulator, and a TIP120 transistor inline.  The fan can be turned on or off
-from the Arduino with an IO line through a resistor to the base of the TIP120. 
+A spare 12V computer fan was wired in parallel across the MOSFET,
+via a 7812 regulator, and a TIP120 transistor.  The fan can be turned on or off
+from the Arduino with an GPIO line through a resistor to the base of the TIP120. 
 Importantly, I route the emitter of the transistor back into the current being
 measured by the INA712, so when the fan turns on or off the
-system counts that as extra load drawn from the battery.
-Of course, if I work with a low-voltage source it is too little to run the fan. 
+system recognizes that as extra load drawn from the battery, and adjusts the
+MOSFET gate voltage to keep tracking the target load. 
+Of course, when my source voltage is too low the fan won't run. 
 
-Along this line of thinking I have provided a "shunt connector" to bypass the 
-MOSFET (but I still measure the shunted current), so that I can, in principle, 
-burn up energy from the battery in my shunt circuitry.
+Along this line of thinking I have provided a "shunt connector" on the front
+panel of the build to bypass the MOSFET, but so that I still measure and 
+take account of the shunted current. So I can burn up energy from the battery 
+in my shunt circuitry.  
 
+## Some notes about the software
 
+Besides the very convoluted temperature measurement described
+at https://github.com/cspwcspw/Background_DS1820_Sensing 
+I did a few other interesting things.
 
-## Conclusion
+Rather than use interrupts to handle the quadrature encoding on the rotary 
+encoder, I preferred a regularly polled solution.  My interrupts were noisy 
+and multi-triggering.  To rig up regular polling I have set an interrupt
+trigger register on hardware timer 1.  That timer is already used in the 
+Arduino for upating the `millis()` counter. The article 
+at https://learn.adafruit.com/multi-tasking-the-arduino-part-2/timers 
+shows how to piggy-back your own interrupt onto that counter.  From that
+call I can poll the two lines of the rotary encoder and track direction
+of movement, and estimate speed of rotation. 
 
+At one stage I considered logging data and looked like I might run out of
+memory. So I moved all the constant strings in the program into a String 
+Store object.  In principle this would let me put the strings in some
+external flash.  I never had to take that step, and finally ended up with only 
+about 62% of the Arduino's dynamic memory used - plenty of spare room!    
 
-This project, and this document, is work in progress ...  
-So there is much to do, still.
+There is a string-based menu picking system that allows the user to pick
+items using the rotary encoder with feedback on the LCD.
+
+And for the LCD display I extended the `LiquidCrystal_I2C` library with
+some new functionality. I define zones on the LCD, and can target output
+into a specific zone.  The zone can be left or right aligned.  
+I then also added some functions to show strings,
+integers, or double values in the targeted zones.  
+
+## Resources
+
+Under the hood is not very pretty.  But it works.
+
+![underTheHood](Images/underTheHood.jpg "Under the hood")
+
+TThe source code and some LTSpice simulation source files are on Github.
 
 
 *Last Revision 16 April 2020*  
 mailto:cspwcspw@gmail.com 
-
-
-
