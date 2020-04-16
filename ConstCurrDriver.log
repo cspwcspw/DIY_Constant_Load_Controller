@@ -1,0 +1,26 @@
+Circuit: * D:\GitHub\ESP32_Constant_Power_Current_Load\ConstCurrDriver.asc
+
+Limiting rise time of source v§gpio1 to 6.41026e-06
+Limiting fall time of source v§gpio1 to 6.41026e-06
+Direct Newton iteration for .op point succeeded.
+.step a=0
+.step a=0.5
+.step a=0.99
+
+Date: Thu Apr 16 22:04:44 2020
+Total elapsed time: 5.497 seconds.
+
+tnom = 27
+temp = 27
+method = modified trap
+totiter = 345799
+traniter = 345785
+tranpoints = 172824
+accept = 134329
+rejected = 38495
+matrix size = 23
+fillins = 2
+solver = Normal
+Matrix Compiler1: 986 bytes object code size  0.3/0.2/[0.1]
+Matrix Compiler2: 1.73 KB object code size  0.2/0.3/[0.2]
+
