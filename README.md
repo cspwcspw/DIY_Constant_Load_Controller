@@ -8,7 +8,8 @@ _Pete Wentworth_    mailto:cspwcspw@gmail.com
 
 There are plenty of DIY constant power / constant load projects. 
 Building one is almost a "rite of passage" if we're going
-to stress-test power supplies, solar panels, batteries, etc. 
+to stress-test power supplies, solar panels, or run 
+discharge tests on batteries, etc. 
 
 [This one from GreatScott!](https://www.youtube.com/watch?v=VwCHtwskzLA) put me
 on the lookout for a decent heat sink, so I snapped an old driver board when 
@@ -18,11 +19,12 @@ I found one scheduled for recycling.
 
 The heatsink indirectly determined the final look of the build.
 Instead of finding a project box I re-used the PCB that was originally 
-under the heatsink.  I mounted it on standoff stilts to make a front 
+under the heatsink. I mounted it on standoff stilts to make a front 
 panel for the project. After cutting a hole in the PCB for the LCD screen 
-and mounting some banana-plug connectors, I asked "Why not mount the Arduino 
-on top, instead of inside?"   Then I found an old-fashioned knob for the
-rotary encoder, etc. etc.  So the final product looks like this:
+and mounting some banana-plug connectors, I asked "Why not put the Arduino 
+on top, instead of inside?" Then I found an old-fashioned knob for the
+rotary encoder, and so on. So the final product has a bit of 
+a not-quite-steam-punk look about it:
 
 ![theBuild](Images/theBuild.jpg "theBuild")
 
@@ -123,7 +125,7 @@ in the RC circuit I got less ripple, but slower response to changes in the
 PWM value.  And I still had to solve the problem of level shifing and 
 remapping the 0V-5V into 2V-8V.   
 
-To shift and stretch the voltage range I used an OpAmp.  And I wanted a 
+To shift and stretch the voltage range I used an opAmp.  And I wanted a 
 two-pole smoothing filter.  What seems to work really nicely is that I put a smaller 
 resistor and capacitor ahead of the opAmp (so I have a DC voltage as input to 
 the amplification stage, but still with 
@@ -162,8 +164,8 @@ The gain, or `m` in the equation, is (`1 + Rf / Rg`), so
 that could be a trimpot or 
 a sensitivity potentiometer in my final circuit.  
  
-The other big "gotcha" about OpAmps, though, is how close the output
-can get to the power rails.  Newer OpAmps specifically designed for
+The other big "gotcha" about opAmps, though, is how close the output
+can get to the power rails.  Newer opAmps specifically designed for
 single-ended supplies are often "rail-to-rail" meaning that the 
 input or output voltages can very closely approach the supply rail voltages. 
 (Some opAmps can only get close to the rails on outputs, some only on inputs.
@@ -175,8 +177,8 @@ zero rail, but the response curve was only linear for outputs
 between 0.7V and about Vcc-1V.  
 
 So here is the LTSpice "back end" of my circuit. To make it easier for
-others to run my simulation, I substituted built-in, but a "similar enough"
-opAmp (AD549) and MOSFET (IFRZ44N) components into the simulation.
+others to run my simulation, I substituted built-in, but "similar enough"
+components (opAmp AD549, and MOSFET IFRZ44N) into the circuit.
 
 ![CircuitPart2](Images/CircuitPart2.png "Circuit Part2")
 
@@ -276,13 +278,16 @@ junction gets really hot.  (These are short 20us pulses).
 ## Parasitic Cooling and Shunt Loads
 
 A spare 12V computer fan was wired in parallel across the MOSFET,
-via a 7812 regulator, and a TIP120 transistor.  The fan can be turned on or off
-from the Arduino with an GPIO line through a resistor to the base of the TIP120. 
-Importantly, I route the emitter of the transistor back into the current being
-measured by the INA712, so when the fan turns on or off the
+(via a 7812 voltage regulator to prevent it burning out), 
+and through a TIP120 transistor switch which allows me to turn 
+the fan on or off from the Arduino.
+ 
+Importantly, I route the emitter of the transistor back into the 
+current being measured by the INA712, so when the fan turns on or off the
 system recognizes that as extra load drawn from the battery, and adjusts the
 MOSFET gate voltage to keep tracking the target load. 
-Of course, when my source voltage is too low the fan won't run. 
+Of course, when my source voltage is too low the fan gets sluggish
+or won't run at all. 
 
 Along this line of thinking I have provided a "shunt connector" on the front
 panel of the build to bypass the MOSFET, but so that I still measure and 
@@ -320,14 +325,23 @@ into a specific zone.  The zone can be left or right aligned.
 I then also added some functions to show strings,
 integers, or double values in the targeted zones.  
 
+The logic for the discharge test allows me to draw the load 
+continuously or intermittently, and I can set up the duration 
+and the duty-cycle of the draw, e.g. draw 2 amps for 45 
+seconds then give the battery a rest for 15 seconds in each cycle.  
+
+The battery discharge test also allows me to run for a fixed amount 
+of time (say 120 minutes), or to terminate the discharge test when 
+the battery voltage falls below a certain threshold. Deeply discharging
+batteries can damage them unless they are designed for deep discharge.
+
 ## Resources
 
 Under the hood is not very pretty.  But it works.
 
 ![underTheHood](Images/underTheHood.jpg "Under the hood")
 
-TThe source code and some LTSpice simulation source files are on Github.
+The source code and the LTSpice simulation source files are on Github.
 
-
-*Last Revision 16 April 2020*  
+*Last Revision 17 April 2020*  
 mailto:cspwcspw@gmail.com 
