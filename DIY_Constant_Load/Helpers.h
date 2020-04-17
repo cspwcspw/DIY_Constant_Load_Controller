@@ -193,7 +193,7 @@ enum myStrings {
 };
 
 const char* store[] = {
-  "Load Controller", "V0.2",
+  "Load Controller", "V0.3",
   "Const Load",  "Play pen",
   "Const Current I", "Const Power VI",
   "Continuously", "Intermittently",

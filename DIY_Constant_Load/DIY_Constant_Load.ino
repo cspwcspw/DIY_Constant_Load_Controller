@@ -90,8 +90,6 @@ void setup() {
 }
 
 
-
-
 void loop()
 {
   static RateLimiter myGate(5);
@@ -128,7 +126,7 @@ void loop()
 
     case manualPWMControlMode:
       showTemperature();
-      manualPWMControl();
+      loadController.ManualPWMControl();
       break;
 
     case lcdCharsetMode: lcdCharSet();  break;
@@ -201,34 +199,6 @@ float measureCurrent()
   double amps = (ampVal * currScaler) / (double) numSmoothingReads;
   return amps;
 }
-
-void manualPWMControl()
-{
-  static RateLimiter myGate(200);
-  if (myGate.hasGreenLight()) {
-
-    lcd.ShowDouble(Z10, "%sV ", 4, 1, volts);
-    lcd.ShowDouble(Z11, "%sA", 5, 3, amps);
-    lcd.ShowDouble(Z12, "%sW", 3, 0, watts);
-
-    int delta, posn;   // Now query whether the user has turned the knob
-    encoder.getVals(&delta, &posn);
-    if (debug) {
-      lcd.ShowInt(Z00, "%ld", millis());
-    }
-    if (delta != 0) {
-      pwmSetting = posn;
-      //theController.SetPWM(pwmSetting);
-      analogWrite16(powerControlPin, pwmSetting);
-    }
-
-    char buf[9];
-    sprintf(buf, "%3d", pwmSetting);
-    lcd.ShowString(Z02, buf);
-  }
-}
-
-
 
 void lcdCharSet() {
   // Let the user scroll through the charset built into the LCD

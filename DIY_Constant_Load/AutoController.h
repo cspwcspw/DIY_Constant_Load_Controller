@@ -252,7 +252,7 @@ class AutoController
       analogWrite16(powerControlPin, pwmSetting);
     }
 
-    void ShowFeedback() {
+    void ShowFeedback(bool isAuto) {
 
       // A bit convoluted because we're short of real estate.
       // So shift around fields, change number of decimal places, etc.
@@ -266,7 +266,12 @@ class AutoController
         if (controllerTarget >= 10) {
           numDecimals = 1;
         }
-        lcd.ShowDouble(Z00, "%sA", 4, numDecimals, controllerTarget);
+        if (isAuto) {
+          lcd.ShowDouble(Z00, "%sA", 4, numDecimals, controllerTarget);
+        }
+        else {
+          lcd.ClearZone(Z00);
+        }
         lcd.ShowDouble(Z10, "%sA", 4, numDecimals, amps);
       }
       else {                   // Constant load mode
@@ -316,6 +321,26 @@ class AutoController
 
       UpdateTarget();
       DoControlMoves();
-      ShowFeedback();
+      ShowFeedback(true);
+    }
+
+    void ManualPWMControl()
+    {
+      // Control the update frequency
+      if (!updateGate.hasGreenLight()) return;
+
+      // In manual mode, force the logic to specific settings
+      controlT = Amps;
+      runState = Active;
+
+      int delta, posn;   // Query whether the user has turned the knob
+      encoder.getVals(&delta, &posn);
+
+      if (delta != 0) {    // Exercise manual control over the PWM
+        pwmSetting = posn;
+        analogWrite16(powerControlPin, pwmSetting);
+      }
+
+      ShowFeedback(false);
     }
 };
